@@ -8,6 +8,15 @@ const WAIT_TIMEOUT_LABEL = 'wait-timeout' as const;
 const LOOKBACK_WINDOW = '5m' as const;
 const WAIT_TIMEOUT = '5s' as const;
 
+function buildProductApprovalMatchExpression(input: ProductApprovalInput): string {
+  return [
+    'has(input.productId)',
+    'has(input.orderId)',
+    `input.productId == ${JSON.stringify(input.productId)}`,
+    `input.orderId == ${JSON.stringify(input.orderId)}`,
+  ].join(' && ');
+}
+
 export type ProductApprovalInput = {
   productId: string;
   orderId: string;
@@ -64,7 +73,7 @@ const waitForProductApproval = productApprovalDag.durableTask({
         new SleepCondition(WAIT_TIMEOUT, WAIT_TIMEOUT_LABEL),
         new UserEventCondition(
           PRODUCT_APPROVAL_EVENT_KEY,
-          `has(input.productId) && input.productId == ${JSON.stringify(input.productId)}`,
+          buildProductApprovalMatchExpression(input),
           WAIT_EVENT_LABEL,
           undefined,
           scope,
